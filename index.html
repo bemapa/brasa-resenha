@@ -253,10 +253,10 @@ svg text{fill:var(--ash);font-family:var(--f-cond);font-size:11px}
     <form class="panel login" id="login-form" autocomplete="off">
       <span class="label">Área restrita</span>
       <h2>Entrar na gestão</h2>
-      <div class="field"><label class="label" for="lg-user">E-mail</label><input id="lg-user" type="email" inputmode="email" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+      <div class="field"><label class="label" for="lg-user">Usuário</label><input id="lg-user" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
       <div class="field"><label class="label" for="lg-pass">Senha</label><input id="lg-pass" type="password" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
       <label class="row" style="gap:8px;cursor:pointer;font-size:14px"><input type="checkbox" id="lg-show" style="width:auto"> Mostrar senha</label>
-      <p class="err" id="lg-err" hidden>E-mail ou senha incorretos.</p>
+      <p class="err" id="lg-err" hidden>Usuário ou senha incorretos.</p>
       <button class="btn pri" type="submit" style="justify-content:center;padding:12px">Entrar</button>
       <button class="btn ghost" type="button" data-go="cardapio" style="justify-content:center">Voltar ao cardápio</button>
     </form>
@@ -421,6 +421,9 @@ const need = () => { if(!db){ toast("Sem conexão com os dados online."); return
 const GESTAO=["comandas","estoque","despesas","caixa","relatorios","config"];
 const TITULOS={cardapio:"Cardápio",login:"Área restrita",comandas:"Comandas",estoque:"Estoque",despesas:"Despesas",caixa:"Caixa",relatorios:"Relatórios",config:"Configurações"};
 let logged=false, auth=null;
+// O Firebase exige e-mail; o usuário digita só o nome e o sistema completa por trás (ex.: admin -> admin@brasa-resenha.app)
+const DOMINIO="brasa-resenha.app";
+const paraEmail=u=>{ u=u.trim().toLowerCase(); return u.includes("@")?u:u+"@"+DOMINIO; };
 function setLogged(v){ logged=v; document.body.classList.toggle("logged",v); }
 function openDrawer(o){
   $("#drawer").classList.toggle("open",o); $("#drawer").setAttribute("aria-hidden",String(!o));
@@ -456,7 +459,7 @@ $("#login-form").addEventListener("submit",async e=>{
   if(!auth){ toast("Sem conexão com o servidor."); return; }
   const btn=e.target.querySelector("button[type=submit]"); btn.disabled=true;
   try{
-    await auth.signInWithEmailAndPassword($("#lg-user").value.trim(), $("#lg-pass").value);
+    await auth.signInWithEmailAndPassword(paraEmail($("#lg-user").value), $("#lg-pass").value);
     $("#lg-err").hidden=true; $("#lg-pass").value=""; toast("Bem-vindo à gestão.");
   }catch(err){ console.error(err); $("#lg-err").hidden=false; $("#lg-pass").select(); }
   btn.disabled=false;
@@ -497,7 +500,7 @@ function agendarCardapio(){ clearTimeout(pubT); pubT=setTimeout(()=>publicarCard
 function fillConfig(){
   const i=pub.info||{};
   $("#cf-wpp").value=i.whatsapp||""; $("#cf-end").value=i.endereco||""; $("#cf-hor").value=i.horario||""; $("#cf-insta").value=i.instagram||"";
-  $("#cf-email").textContent="Conta: "+(auth?.currentUser?.email||""); $("#cf-pass").value=""; $("#cf-pass2").value="";
+  $("#cf-email").textContent="Usuário: "+((auth?.currentUser?.email||"").split("@")[0]); $("#cf-pass").value=""; $("#cf-pass2").value="";
 }
 $("#cfg-info").addEventListener("submit",async e=>{
   e.preventDefault(); if(!need()) return;
